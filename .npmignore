@@ -1,0 +1,13 @@
+\.*
+INTERNAL
+node_modules
+samples
+3rdparty
+sdk
+*.tgz
+*.zip
+package-lock.json
+OHC
+doc
+*.esm*
+
