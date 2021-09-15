@@ -1,0 +1,17 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.0]
+
+- Added support for *slug* parameter on getRenditionURL
+- Added support for *download* parameter on getRenditionURL
+- Server calls can be aborted by returning *false* from beforeSend()
+
+[Diffs](../../compare/v1.3.0...v1.2.0)
+
+## [1.2.0]
+
+- First GitHub release

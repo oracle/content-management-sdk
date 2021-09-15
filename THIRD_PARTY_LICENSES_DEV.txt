@@ -1,6 +1,9 @@
-This package has the following development dependencies:
+Third Party Attributions for Development Code
 
-========================================================
+This file contains dependencies that are used in build scripts, sample code,
+and test suites. These should NOT be needed at runtime by an application
+built using this code.
+============================================================================
 
 microbundle v0.13.0
 -------------------

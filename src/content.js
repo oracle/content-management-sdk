@@ -227,13 +227,14 @@ class RestAPINode {
             const beforeSendResult = restArgs.beforeSend(currentOptions);
             if (beforeSendResult && typeof beforeSendResult.then === 'function') {
               return beforeSendResult
-                .then(() => bsResolve(true))
+                .then(() => bsResolve(beforeSendResult))
                 .catch((e) => bsReject({
                   // error in user code, reject the call
                   status: e,
                   statusText: 'Error in beforeSend() callback promise',
                 }));
             }
+            return bsResolve(beforeSendResult === undefined || beforeSendResult);
           }
           return bsResolve(true);
         } catch (e) {
@@ -281,6 +282,12 @@ class RestAPINode {
         beforeSendOK(options).then((result) => {
           if (result) {
             restRequest = protocolCall.get(options, requestResponse);
+          } else {
+            // aborted the call
+            logger.debug('Call aborted by beforeSend');
+            reject({
+              error: 'call aborted by beforeSend()',
+            });
           }
         });
       } else if (
@@ -302,6 +309,12 @@ class RestAPINode {
         beforeSendOK(options).then((result) => {
           if (result) {
             restRequest = protocolCall.request(options, requestResponse).write(bodyString);
+          } else {
+            // aborted the call
+            logger.debug('Call aborted by beforeSend');
+            reject({
+              error: 'call aborted by beforeSend()',
+            });
           }
         });
       } else {
@@ -329,6 +342,8 @@ class RestAPINode {
             });
           });
         });
+      } else {
+        logger.debug('no restRequest');
       }
     });
 
@@ -380,13 +395,14 @@ class RestAPIBrowser {
             const beforeSendResult = restArgs.beforeSend(currentXHR);
             if (beforeSendResult && typeof beforeSendResult.then === 'function') {
               return beforeSendResult
-                .then(() => bsResolve(true))
+                .then(() => bsResolve(beforeSendResult))
                 .catch((e) => bsReject({
                   // error in user code, reject the call
                   status: e,
                   statusText: 'Error in beforeSend() callback promise',
                 }));
             }
+            return bsResolve(beforeSendResult === undefined || beforeSendResult);
           }
           return bsResolve(true);
         } catch (e) {
@@ -669,11 +685,11 @@ class ContentAPI {
     );
   }
 
-  getRenditionURL(itemGUID, itemType, restArgs) {
+  getRenditionURL(itemGUID, slug, renditionName, restArgs) {
     let url = '';
 
-    if (itemGUID) {
-      if (this.isDigitalAsset(itemGUID)) {
+    if (slug || itemGUID) {
+      if (slug || this.isDigitalAsset(itemGUID)) {
         // Content URL
         const { format } = restArgs;
         const { download } = restArgs;
@@ -687,10 +703,12 @@ class ContentAPI {
           ? this.properties.secureAssetURLName
           : this.properties.assetURLName;
 
-        const type = itemType || this.properties.digitalAssetDefault;
+        const rendition = renditionName || this.properties.digitalAssetDefault;
+        const identifier = itemGUID || `.by.slug/${slug}`;
+
         url = `${this.createPrefix(
           restArgs,
-        )}/${digitalAssets}/${itemGUID}/${type}`;
+        )}/${digitalAssets}/${identifier}/${rendition}`;
 
         // add in any query parameters
         if (cacheBusterValue) {
@@ -703,6 +721,9 @@ class ContentAPI {
         }
         if (download) {
           url += `${joinChar}download=true`;
+          joinChar = '&';
+        } else if (download === false) {
+          url += `${joinChar}download=false`;
           joinChar = '&';
         }
         if (restArgs.contentType === 'published' && restArgs.channelToken) {
@@ -883,7 +904,7 @@ class ContentApiV11Impl extends ContentApiV1Impl {
     // Ignored if language is given to not create an invalid URL
     let versionStr = '';
     if (!language) {
-      if (args.assetVersion !== '') {
+      if (args.assetVersion) {
         versionStr = `/versions/${args.assetVersion}`;
       }
     }
@@ -1101,7 +1122,7 @@ class ContentDeliveryClientImpl {
     }
 
     // links for download
-    if (args.download) {
+    if ((args.download === true) || (args.download === false)) {
       restArgs.download = args.download;
     }
 
@@ -1586,37 +1607,58 @@ class ContentDeliveryClientImpl {
   }
 
   /**
-   * Get the native URL to render an image asset into the page.<br/>
+   * Get the native URL to render an image asset.<br/>
    * @returns {string} A fully qualified URL to the published image asset.
    * @param {object} args - A JavaScript object containing the "getRenditionURL" parameters.
-   * @param {string} args.id - The ID of the image asset.
+   * @param {string} args.id - The ID of the image asset. One of 'id' or 'slug' must be
+   * provided for the function to return a URL.
+   * @param {string} args.slug - The slug of the image asset. One of 'id' or 'slug' must be
+   * provided for the function to return a URL.
    * @param {string } [args.type='native']  - The name of the desired rendition
    * @param {string} [args.format] - The desired format. Required for non-native renditions
    * but ignored for native. For image assets the value should be 'jpg' or 'webp'.
+   * @param {boolean} [args.download] - Pass <i>true</i> to add &download=true or <i>false</i>
+   * for &download=false.  This flag will force a content-disposition of 'attachment' or
+   * 'inline'.  If unspecified, the content server will choose a disposition based on
+   * the type of asset.
    * @example
    * //get the native rendition URL for this client
-   * console.log(contentClient.getRenditionURL({
-   *     'id': digitalAssetId
-   * }));
+   * contentClient.getRenditionURL({
+   *     id: 'CONTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1'
+   * });
    *  @example
    * //get the Thumbnail rendition URL for an image in JPEG format
-   * console.log(contentClient.getRenditionURL({
-   *     'id': digitalAssetId,
-   *     'type': 'Thumbnail',
-   *     'format' 'jpg'
-   * }));
+   * contentClient.getRenditionURL({
+   *     id: 'CONTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1',
+   *     type: 'Thumbnail',
+   *     format: 'jpg'
+   * });
+   *  @example
+   * //get the native rendition URL, to be rendered inline
+   * contentClient.getRenditionURL({
+   *     id: 'CONTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1',
+   *     download: false
+   * });
+   *  @example
+   * //get the native rendition URL by slug, to be rendered inline
+   * contentClient.getRenditionURL({
+   *     slug: 'pageBanner,
+   *     download: false
+   * });
    */
   getRenditionURL(params) {
     const self = this;
     const args = params || {};
     const guid = args.id || args.ID || args.itemGUID;
+    const { slug } = args;
+    const renditionName = args.rendition || args.type;
     const restCallArgs = self.resolveRESTArgs('GET', args);
 
     if (this.isCompiler) {
       // encode into a macro and let the compiler expand
       return `[!--$SCS_DIGITAL_ASSET--]${guid}[/!--$SCS_DIGITAL_ASSET--]`;
     }
-    return self.restAPI.getRenditionURL(guid, args.type, restCallArgs);
+    return self.restAPI.getRenditionURL(guid, slug, renditionName, restCallArgs);
   }
 
   /**
