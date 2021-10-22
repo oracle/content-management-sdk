@@ -17,6 +17,7 @@
   "main": "./dist/content.umd.js",
   "exports": {
     ".": "./dist/content.umd.js",
+    "./esm": "./dist/content.esm.js",
     "./common": "./dist/content.modern.js",
     "./umd": "./dist/content.umd.js",
     "./modern": "./dist/content.js"
@@ -30,6 +31,8 @@
     "THIRD_PARTY_LICENSES_DEV.txt",
     "dist/content.js",
     "dist/content.js.map",
+    "dist/content.esm.js",
+    "dist/content.esm.js.map",
     "dist/content.modern.js",
     "dist/content.modern.js.map",
     "dist/content.umd.js",
