@@ -1,8 +1,7 @@
 /**
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
- * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
-// jshint ignore: start
 
 // Detect whether we're running in a browser or in NodeJS.
 // Note that some other environments (e.g. React-Native) are not detected and may not
@@ -160,8 +159,24 @@ class RestAPINode {
     Object.assign(this, args);
   }
 
+  // Using this wrapper effectively changes static require() calls
+  // into dynamic requires which helps to bypass bundlers like rollup
+  // which try to keep the require/imports for this code in the client
+  // bundles (which fails in various ways).
+  //
+  // The code in RestAPINode is never executed in browsers anyways
+  // but this trick will allow the RestAPINode code to still be
+  // bundled in the client bundles.
+  requireOnlyOnNodeJS(pkg) {
+    if (isNodeJS) {
+      return require(pkg);
+    }
+
+    return undefined;
+  }
+
   extractServer(contentServerURL) {
-    const url = require('url');
+    const url = this.requireOnlyOnNodeJS('url');
     const contentServer = contentServerURL || 'http://localhost';
     const parsedURL = url.parse(contentServer);
 
@@ -182,30 +197,25 @@ class RestAPINode {
 
     // require in the node REST call dependencies
     const protocolCalls = {
-      'http:': require('http'),
-      'https:': require('https'),
+      'http:': this.requireOnlyOnNodeJS('http'),
+      'https:': this.requireOnlyOnNodeJS('https'),
     };
-    let url = null;
-    if (isNodeJS) {
-      url = require('url');
-    }
+    const url = this.requireOnlyOnNodeJS('url');
 
     const nodePromise = new Promise((resolve, reject) => {
       // parse the URL
       const options = url.parse(targetURL);
       const protocolCall = protocolCalls[options.protocol || 'https:'];
       let restRequest;
-      /* jshint node: true */
       const proxyType = options.protocol || 'https:';
       const proxy = proxyType === 'https:'
         ? process.env.oce_https_proxy
         : process.env.oce_http_proxy;
 
-      /* jshint node: false */
       if (proxy) {
         try {
           logger.debug(`Using proxy: ${proxy}`);
-          const HttpsProxyAgent = require('https-proxy-agent');
+          const HttpsProxyAgent = this.requireOnlyOnNodeJS('https-proxy-agent');
           logger.debug('Loaded proxy agent');
           const agent = new HttpsProxyAgent(proxy);
           logger.debug(`Using proxy: ${proxy} connecting to ${targetURL}`);
@@ -1916,13 +1926,24 @@ class ContentDeliveryClientImpl {
    * For example, a Rich Text field can have links to digital assets. <br/>
    * If a field that you want to render can contain macros, you can use this utilty function to
    * expand the macros.
+   *
+   * This method supports expanding the macro CEC_DIGITAL_ASSET into a rendition URL
+   * for a digital asset.  If the asset GUID is followed by ",true" then the URL
+   * will be a download URL.</p>
+   * Note that assets referenced via this macro may need to be
+   * explicitly published unless the macro was used in a Large Text field in which case
+   * the asset will be considered a dependency of the referencing asset and will be
+   * published at the same time as the referencing asset.
    * @param {string} fieldValue - A field value that may contain macros.
    * @returns {string} The "fieldValue" string with all macros expanded.
    * @example
-   * // expand any macros
-   * console.log(contentClient.expandMacros(
-   *   '<img src="[!--$CEC_DIGITIAL_ASSET--]CONT21B61179DFA73E8B5BCF[/!--$CEC_DIGITAL_ASSET--]"/>');
-   *
+   * // embed an image asset:
+   * contentClient.expandMacros(
+   * '<img src="[!--$CEC_DIGITAL_ASSET--]CONTABC123[/!--$CEC_DIGITAL_ASSET--]"/>');
+   * @example
+   * // A download link:
+   * contentClient.expandMacros(
+   * '<a href="[!--$CEC_DIGITAL_ASSET--]CONTABC123,true[/!--$CEC_DIGITAL_ASSET--]">Download</a>');
    */
   expandMacros(fieldValue) {
     let afterValue = fieldValue || '';

@@ -2,8 +2,12 @@
   "name": "@oracle/content-management-sdk",
   "description": "Oracle Content Management JavaScript SDK",
   "author": "Oracle America, Inc.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "homepage": "https://github.com/oracle/content-management-sdk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oracle/content-management-sdk.git"
+  },
   "keywords": [
     "cms",
     "headless-cms",
@@ -20,7 +24,8 @@
     "./esm": "./dist/content.esm.js",
     "./common": "./dist/content.modern.js",
     "./umd": "./dist/content.umd.js",
-    "./modern": "./dist/content.js"
+    "./modern": "./dist/content.js",
+    "./package.json": "./package.json"
   },
   "files": [
     "CHANGELOG.md",
@@ -48,7 +53,9 @@
     "bundle": "microbundle --no-compress",
     "minify": "uglifyjs dist/content.umd.js -c -o dist/content.umd.min.js",
     "pack": "npm pack",
-    "build": "npm run bundle && npm run minify && npm run pack"
+    "build": "npm run bundle && npm run minify && npm run pack",
+    "publish": "npm publish --access public",
+    "localpub": "mkdir -p localpub && tar -xf *.tgz --directory localpub && pushd localpub/package && npm link && popd"
   },
   "devDependencies": {
     "microbundle": "~0.13.0",
