@@ -46,7 +46,7 @@ contentDeliveryClient.getItem(....);
 
 ```javascript
 // Imports the contentSDK class. You could import the createDeliveryClient or createPreviewClient functions instead.
-const { contentSDK } = require('@oracle/content-management-sdk');
+const contentSDK = require('@oracle/content-management-sdk');
 
 const contentDeliveryClient = contentSDK.createDeliveryClient({
   contentServer: 'https://<service-name>-<account-name>.cec.ocp.oraclecloud.com',
@@ -118,7 +118,7 @@ vulnerability disclosure process.
 
 ## License
 
-Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 
 Released under the Universal Permissive License v1.0 as shown at
 <https://oss.oracle.com/licenses/upl/>.
