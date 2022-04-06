@@ -2,7 +2,7 @@
   "name": "@oracle/content-management-sdk",
   "description": "Oracle Content Management JavaScript SDK",
   "author": "Oracle America, Inc.",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "homepage": "https://github.com/oracle/content-management-sdk",
   "repository": {
     "type": "git",

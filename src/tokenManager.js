@@ -5,8 +5,6 @@
 /* eslint-disable import/named */
 /* eslint-disable import/no-extraneous-dependencies */
 
-const https = require('https');
-
 /*
  * This file contains the TokenManager class, which contains methods used to create and maintain
  * authentication tokens to access to an instance of Oracle Content Management.
@@ -88,6 +86,8 @@ class TokenManager {
     };
 
     return new Promise((resolve, reject) => {
+      // eslint-disable-next-line global-require
+      const https = require('https');
       const req = https.request(options, (res) => {
         let returnData = '';
 
