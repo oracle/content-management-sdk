@@ -85,36 +85,41 @@ class TokenManager {
       },
     };
 
-    return new Promise((resolve, reject) => {
-      // eslint-disable-next-line global-require
-      const https = require('https');
-      const req = https.request(options, (res) => {
-        let returnData = '';
+    const isNodeJS = typeof window === 'undefined' && typeof process === 'object';
+    if (isNodeJS) {
+      return new Promise((resolve, reject) => {
+        // eslint-disable-next-line global-require
+        const https = require('https');
+        const req = https.request(options, (res) => {
+          let returnData = '';
 
-        res.on('data', (chunk) => {
-          returnData += chunk;
-        });
+          res.on('data', (chunk) => {
+            returnData += chunk;
+          });
 
-        res.on('end', () => {
-          const responseJSON = JSON.parse(returnData);
+          res.on('end', () => {
+            const responseJSON = JSON.parse(returnData);
 
-          const accessToken = responseJSON.access_token;
-          const expiry = responseJSON.expires_in;
+            const accessToken = responseJSON.access_token;
+            const expiry = responseJSON.expires_in;
 
-          resolve({
-            authHeaderValue: `Bearer ${accessToken}`,
-            expiry,
+            resolve({
+              authHeaderValue: `Bearer ${accessToken}`,
+              expiry,
+            });
           });
         });
-      });
 
-      req.on('error', (error) => {
-        reject(error);
-      });
+        req.on('error', (error) => {
+          reject(error);
+        });
 
-      req.write(body);
-      req.end();
-    });
+        req.write(body);
+        req.end();
+      });
+    }
+    // Return an empty value if it is not running on a server
+    return { authHeaderValue: '' };
   }
 
   /**

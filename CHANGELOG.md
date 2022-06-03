@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2]
+
+- Avoid executing NodeJS-specific code from browser contexts
+
+[Diffs](../../compare/v1.4.2...v1.4.1)
+
 ## [1.3.1]
 
 - Include ES module in package ([see issue](https://github.com/oracle/content-management-sdk/issues/1))
