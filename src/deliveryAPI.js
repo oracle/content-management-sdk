@@ -74,6 +74,7 @@ class ContentDeliveryClientImpl {
       getAuthorizationHeaderValue: utils.bind(this.getAuthorizationHeaderValue, this),
       searchItems: utils.bind(this.queryItems, this),
       queryItems: utils.bind(this.queryItems, this),
+      graphQL: utils.bind(this.graphQL, this),
       getRenditionURL: utils.bind(this.getRenditionURL, this),
       getLayoutInfo: utils.bind(this.getLayoutInfo, this),
       getRecommendationResults: utils.bind(this.getRecommendationResults, this),
@@ -520,6 +521,34 @@ class ContentDeliveryClientImpl {
     );
 
     return self.restAPI.callRestServer(url, restCallArgs);
+  }
+
+  graphQL(params) {
+    const self = this;
+    const args = params || {};
+    const graphCallArgs = this.resolveRESTArgs('POST', args);
+    graphCallArgs.noCSRFToken = true;
+
+    logger.debug('ContentClient.queryItems: arguments');
+    logger.debug(args);
+
+    // no need for these search parameters
+    delete graphCallArgs.search
+
+    // format the query
+    graphCallArgs.postData = {
+      query: params.query || '',
+      variables: params.variables || ''
+    }
+    
+    // format the URL
+    // /content/published/api/v1.1/graphql
+    const url = self.restAPI.formatURL(
+      self.restAPI.resolveGraphQLPath(),
+      graphCallArgs,
+    );
+
+    return self.restAPI.callRestServer(url, graphCallArgs);
   }
 
   /**

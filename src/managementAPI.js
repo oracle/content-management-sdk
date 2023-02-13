@@ -68,6 +68,7 @@ class ContentManagementClientImpl extends ContentDeliveryClientImpl {
       getItems: utils.bind(this.getItems, this),
       getAuthorizationHeaderValue: utils.bind(this.getAuthorizationHeaderValue, this),
       searchItems: utils.bind(this.queryItems, this),
+      graphQL: utils.bind(this.graphQL, this),
       queryItems: utils.bind(this.queryItems, this),
       getRenditionURL: utils.bind(this.getRenditionURL, this),
       getLayoutInfo: utils.bind(this.getLayoutInfo, this),

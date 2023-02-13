@@ -964,6 +964,9 @@ class ContentApiV11Impl extends ContentApiV1Impl {
   resolveSearchPath(/* args */) {
     return '/items';
   }
+  resolveGraphQLPath(/* args */) {
+    return '/graphql';
+  }
 
   resolveGetBulkItemListPath(args) {
     // args.itemGUIDs: array of IDs to add to the URL
