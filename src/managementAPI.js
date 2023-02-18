@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
 
@@ -72,6 +72,7 @@ class ContentManagementClientImpl extends ContentDeliveryClientImpl {
       getRenditionURL: utils.bind(this.getRenditionURL, this),
       getLayoutInfo: utils.bind(this.getLayoutInfo, this),
       getRecommendationResults: utils.bind(this.getRecommendationResults, this),
+      graphql: utils.bind(this.graphql, this),
       loadContentLayout: utils.bind(this.loadContentLayout, this),
       renderItem: utils.bind(this.renderItem, this),
       expandMacros: utils.bind(this.expandMacros, this),
@@ -84,6 +85,14 @@ class ContentManagementClientImpl extends ContentDeliveryClientImpl {
 
     logger.debug('ContentClient.create: Content Info:');
     logger.debug(this.info);
+  }
+
+  /**
+   * @ignore
+   */
+  // eslint-disable-next-line no-unused-vars, class-methods-use-this
+  graphql(params) {
+    throw new Error('Not Supported');
   }
 
   /**

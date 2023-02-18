@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
 // jshint ignore: start
@@ -74,6 +74,7 @@ class ContentDeliveryClientImpl {
       getAuthorizationHeaderValue: utils.bind(this.getAuthorizationHeaderValue, this),
       searchItems: utils.bind(this.queryItems, this),
       queryItems: utils.bind(this.queryItems, this),
+      graphql: utils.bind(this.graphql, this),
       getRenditionURL: utils.bind(this.getRenditionURL, this),
       getLayoutInfo: utils.bind(this.getLayoutInfo, this),
       getRecommendationResults: utils.bind(this.getRecommendationResults, this),
@@ -1051,6 +1052,80 @@ class ContentDeliveryClientImpl {
     logger.log(`expandMacros: afterValue: ${afterValue}`);
 
     return afterValue;
+  }
+
+  /**
+   * Get a list of items based on GraphQL POST query.<br/>
+   *
+   * See GraphQL Explorer: https://[domain]/content/published/api/v1.1/graphql/explorer
+   *
+   * @param {object} args - A JavaScript object containing the "GraphQL" parameters.
+   * @param {string} [args.query=''] - A GraphQL query string to restrict results.
+   * @param {function} [args.beforeSend=undefined] - A callback passing in the xhr
+   * (browser) or options (node) object before making the REST call.
+   * @returns {Promise} A JavaScript Promise object that can be used to retrieve
+   *  the data after the call has completed.
+   * @example
+   * // get the id,name,type of all the items in the publishing channel:
+   * contentClient.graphql({
+   *     query: '{ getItems(channelToken: "2834f431f8524ffa89dfb7fe77993284")
+   *  { items { id name type } } }'
+   * }).then(function (response) {
+   *     console.log(response);
+   * });
+   * @example
+   * // get the item slug with the corresponding id in a channel:
+   * contentClient.graphql({
+   *     query: '{ getItem(id:"CORE51A353B7C6AA4EB29C74781FB418C93B",
+   *                         channelToken:"546c6bdfe022455db92741407cccded3")
+   *   { slug } }'
+   * }).then(function (response) {
+   *     console.log(response);
+   * });
+   * @example
+   * // get an item by supplying its ID and channel tokens as GraphQL variables:
+   * contentClient.graphql({
+   *  query: `query ($itemId: ID, $channelToken: String) {
+   *            getItem(id: $itemId, channelToken: $channelToken) {
+   *              id
+   *            }}`,
+   *  variables: {
+   *    itemId: process.env.VALID_DIGITAL_ASSET_ID_OAUTH,
+   *    channelToken: process.env.CHANNEL_TOKEN_OAUTH,
+   *  },
+   *});
+   */
+  graphql(params) {
+    const self = this;
+    const args = params || {};
+    const restCallArgs = this.resolveRESTArgs('POST', args);
+
+    // add in the graphQL query POST body
+    restCallArgs.postData = {
+      query: params.query || params.q,
+      variables: params.variables || null,
+    };
+
+    logger.debug('ContentClient.graphql: arguments');
+    logger.debug(args);
+
+    // setup the search specific arguments
+    //  - search does not require management calls so the CSRF
+    //  token should not be required for POST requests
+    restCallArgs.noCSRFToken = true;
+
+    // format the GraphQL URL:  https://.../content/published/api/v1.1/graphql?cb=<cachebuster>
+    const url = self.formatGraphQLURL(restCallArgs);
+
+    return self.restAPI.callRestServer(url, restCallArgs);
+  }
+
+  formatGraphQLURL(restArgs) {
+    const cacheBusterValue = typeof restArgs.cacheBuster === 'object' ? restArgs.cacheBuster.contentKey : restArgs.cacheBusterl;
+    const cacheBuster = cacheBusterValue ? `cb=${cacheBusterValue}` : '';
+    const state = restArgs.contentType === 'preview' ? 'preview' : 'published'; // only 'preview' & 'published' supported by graphQL
+
+    return `${restArgs.contentServer}/content/${state}/api/v1.1/graphql${cacheBuster}`;
   }
 }
 
