@@ -1121,11 +1121,16 @@ class ContentDeliveryClientImpl {
   }
 
   formatGraphQLURL(restArgs) {
-    const cacheBusterValue = typeof restArgs.cacheBuster === 'object' ? restArgs.cacheBuster.contentKey : restArgs.cacheBusterl;
-    const cacheBuster = cacheBusterValue ? `cb=${cacheBusterValue}` : '';
+    const queryParams = new URLSearchParams();
+    if (typeof restArgs.cacheBuster === 'object') {
+      queryParams.append('cb', restArgs.cacheBuster.contentKey);
+    }
+    if (['localhost', '127.0.0.1'].some((host) => restArgs.contentServer.includes(host))) {
+      queryParams.append('channelToken', restArgs.channelToken);
+    }
     const state = restArgs.contentType === 'preview' ? 'preview' : 'published'; // only 'preview' & 'published' supported by graphQL
 
-    return `${restArgs.contentServer}/content/${state}/api/v1.1/graphql${cacheBuster}`;
+    return `${restArgs.contentServer}/content/${state}/api/v1.1/graphql?${queryParams.toString()}`;
   }
 }
 
