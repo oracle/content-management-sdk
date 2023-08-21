@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2]
+
+- Fixed a bug where chunks of server responses that span multi-byte UTF8 characters could get corrupted
+- Introduce hook for post-processing asset items returned by server APIs
+
+[Diffs](../../compare/v1.6.2...v1.5.0)
+
+## [1.5.0]
+
+- Added graphql() method to execute requests against the GraphQL endpoint
+  
+[Diffs](../../compare/v1.4.2...v1.5.0)
+
 ## [1.4.2]
 
 - Avoid executing NodeJS-specific code from browser contexts

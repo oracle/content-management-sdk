@@ -77,6 +77,7 @@ class ContentPreviewClientImpl extends ContentDeliveryClientImpl {
       getTaxonomies: utils.bind(this.getTaxonomies, this),
       queryTaxonomies: utils.bind(this.queryTaxonomies, this),
       queryTaxonomyCategories: utils.bind(this.queryTaxonomyCategories, this),
+      getTaxonomyCategory: utils.bind(this.getTaxonomyCategory, this),
     };
 
     logger.debug('ContentClient.create: Content Info:');

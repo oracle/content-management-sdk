@@ -261,14 +261,18 @@ class RestAPINode {
 
       // function to handle request response into JSON
       const requestResponse = function requestResponse(response) {
-        let body = '';
+        const chunksArray = [];
         const responseStatus = response.statusCode;
 
         response.on('data', (chunk) => {
-          body += chunk;
+          chunksArray.push(chunk);
         });
 
         response.on('end', () => {
+          // This is needed because the chunks may contain UTF-8 strings and
+          // concatenating them into a string as we receive each chunk can
+          // lead to corrupted characters.
+          const body = `${Buffer.concat(chunksArray)}`;
           if (responseStatus >= 200 && responseStatus < 300) {
             try {
               const jsonResponse = JSON.parse(body);
@@ -946,8 +950,14 @@ class ContentApiV11Impl extends ContentApiV1Impl {
     return `/items/${slug}${versionStr}${language}${aggregate}`;
   }
 
+  // Get categories for a given taxonomy
   resolveQueryTaxonomyCategoriesPath(args) {
     return `/taxonomies/${args.taxonomyGUID}/categories`;
+  }
+
+  // get details about a given taxonomy category
+  resolveQueryTaxonomyCategoriesDetails(args) {
+    return `/taxonomies/${args.taxonomyGUID}/categories/${args.categoryGUID}`;
   }
 
   resolveGetTaxonomiesPath(/* args */) {

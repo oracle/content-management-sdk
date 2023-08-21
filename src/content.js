@@ -37,6 +37,8 @@ import { logger, OptionsValidation } from './utils';
   * @property {string} [authorizationParams.CLIENT_SECRET] - Secret of client application
   * @property {string} [authorizationParams.CLIENT_SCOPE_URL] - Scope of application
   * @property {string} [authorizationParams.IDP_URL] - URL of Identity provider.
+  * @property {function}[assetTransform=undefined] - optional function that can modify assets returned by getItem, getItems, and queryItems
+  * TODO: Document the mod function modifying getItem(), getItems(), queryItems()
   * This will be used to generate new OAuth tokens on demand.
   * @property {function} [beforeSend=undefined] - Callback passing in the xhr
   * (browser) or options (NodeJS) object before making the REST call.

@@ -56,6 +56,7 @@ class ContentDeliveryClientImpl {
       contentVersion:
         this.restAPI.requestedContentVersion || this.restAPI.contentVersion,
       authorization: args.authorization,
+      assetTransform: args.assetTransform,
       tokenManager: new TokenManager(args.authorizationParams, args.authorization),
     };
 
@@ -83,6 +84,7 @@ class ContentDeliveryClientImpl {
       expandMacros: utils.bind(this.expandMacros, this),
       getTaxonomies: utils.bind(this.getTaxonomies, this),
       queryTaxonomyCategories: utils.bind(this.queryTaxonomyCategories, this),
+      getTaxonomyCategory: utils.bind(this.getTaxonomyCategory, this),
     };
 
     logger.debug('ContentClient.create: Content Info:');
@@ -280,7 +282,7 @@ class ContentDeliveryClientImpl {
    *     }
    * );
    */
-  getItem(params) {
+  async getItem(params) {
     const args = params || {};
     const guid = args.id || args.ID || args.itemGUID;
     const restCallArgs = this.resolveRESTArgs('GET', args);
@@ -298,7 +300,13 @@ class ContentDeliveryClientImpl {
     );
 
     // make the rest call
-    return this.restAPI.callRestServer(url, restCallArgs);
+    const result = await this.restAPI.callRestServer(url, restCallArgs);
+
+    if (restCallArgs.assetTransform) {
+      const newRes = restCallArgs.assetTransform(result);
+      return Promise.resolve(newRes);
+    }
+    return Promise.resolve(result);
   }
 
   /**
@@ -432,7 +440,7 @@ class ContentDeliveryClientImpl {
    *     }));
    * });
    */
-  getItems(params) {
+  async getItems(params) {
     const self = this;
     const args = params || {};
     const guids = args.ids || args.IDs || args.itemGUIDs;
@@ -497,6 +505,12 @@ class ContentDeliveryClientImpl {
               });
             }
 
+            // Run the optional asset transform
+            if (restCallArgs.assetTransform) {
+              for (let result of allContentItems.items) {
+                result = restCallArgs.assetTransform(result);
+              }
+            }
             // resolve with all the items
             resolve(allContentItems);
           },
@@ -520,7 +534,16 @@ class ContentDeliveryClientImpl {
       restCallArgs,
     );
 
-    return self.restAPI.callRestServer(url, restCallArgs);
+    const allContentItems = await self.restAPI.callRestServer(url, restCallArgs);
+    if (restCallArgs.assetTransform) {
+      for (let result of allContentItems.items) {
+        result = restCallArgs.assetTransform(result);
+      }
+    }
+    // resolve to a promise
+    return Promise.resolve(allContentItems);
+
+    // return self.restAPI.callRestServer(url, restCallArgs);
   }
 
   /**
@@ -546,7 +569,7 @@ class ContentDeliveryClientImpl {
    *     console.log(items);
    * });
    */
-  queryItems(params) {
+  async queryItems(params) {
     const self = this;
     const args = params || {};
     const restCallArgs = this.resolveRESTArgs('GET', args);
@@ -565,7 +588,15 @@ class ContentDeliveryClientImpl {
       restCallArgs,
     );
 
-    return self.restAPI.callRestServer(url, restCallArgs);
+    // Same patch as getItems
+    const allContentItems = await self.restAPI.callRestServer(url, restCallArgs);
+    if (restCallArgs.assetTransform) {
+      for (let result of allContentItems.items) {
+        result = restCallArgs.assetTransform(result);
+      }
+    }
+    // resolve to a promise
+    return Promise.resolve(allContentItems);
   }
 
   /**
@@ -586,7 +617,7 @@ class ContentDeliveryClientImpl {
    *      return topLevelItem;
    * });
    */
-  queryTaxonomyCategories(params) {
+  async queryTaxonomyCategories(params) {
     const args = params || {};
     const guid = args.id || args.ID || args.itemGUID;
     const restCallArgs = this.resolveRESTArgs('GET', args);
@@ -595,6 +626,46 @@ class ContentDeliveryClientImpl {
     const url = this.restAPI.formatURL(
       this.restAPI.resolveQueryTaxonomyCategoriesPath({
         taxonomyGUID: guid,
+      }),
+      restCallArgs,
+    );
+
+    return this.restAPI.callRestServer(url, restCallArgs);
+  }
+
+  /**
+   * Get the details about a specified taxonomy category .<br/>
+   * All arguments are passed through to the Content Delivery REST API call.
+   *
+   * @param {object} args - A JavaScript object containing the "getTaxonomyCategory" parameters.
+   * @param {string} args.id - The ID of the taxonomy.
+   * @param {string} args.categoryId - The ID of the category.
+   * @param {string} [fields] - Extra fields to be returned. Defaults to ''.
+   * @returns {Promise} A JavaScript Promise object that can be used to retrieve the
+   * data after the call has completed.
+   * @example
+   * // get the details about a given taxonomy category
+   * client.getTaxonomyCategory({
+   *      'id': taxonomyId,
+   *      'categoryId': categoryId,
+   *      'fields': 'customProperties',
+   * }).then(function (response) {
+   *      console.log(response.id);
+   *      return topLevelItem;
+   * });
+   */
+
+  getTaxonomyCategory(params) {
+    const args = params || {};
+    const taxonomyGuid = args.id || args.ID || args.itemGUID;
+    const categoryGuid = args.categoryId || args.categoryGUID;
+    const restCallArgs = this.resolveRESTArgs('GET', args);
+
+    // create the URL
+    const url = this.restAPI.formatURL(
+      this.restAPI.resolveQueryTaxonomyCategoriesDetails({
+        taxonomyGUID: taxonomyGuid,
+        categoryGUID: categoryGuid,
       }),
       restCallArgs,
     );
