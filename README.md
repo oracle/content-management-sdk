@@ -1,5 +1,7 @@
 # About Oracle Content Management - Content SDK (JavaScript)
 
+NOTE: Oracle Content Management Cloud Services reached "End of Life" status and has been discontinued as of January 1, 2026.  This project is no longer supported or maintained.
+
 The Content SDK for Oracle Content Management is a light-weight JavaScript wrapper that interacts with the Content REST APIs. This read-only SDK retrieves structured content, digital assets and content layouts that are managed in Oracle Content Management. The SDK allows you to write a web application that is content rich - allowing the use of Oracle Content Management for content management, authoring and approval and delivery from your own web server.
 
 The SDK consists of three main classes:
